@@ -8,6 +8,8 @@ app.listen(port, function () {
     console.log('Example app listening on port ' + port);
 });
 
+app.use(require('body-parser').json())
+
 //Example
 // app.get('/select', function(req, res){
 //     DButilsAzure.execQuery("SELECT * FROM names")
@@ -33,3 +35,21 @@ app.get('/getPoint', function(req, res){
         res.send(err)
     })
 })
+
+
+//login
+app.post('/logIn', function(req, res){
+    let userName = req.body.userName;
+    let password = req.body.password;
+    //console.log("**************" + pointName);
+    DButilsAzure.execQuery(
+        "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = HASHBYTES('SHA2_512','" + password + "')) > 0 SELECT 1 ELSE SELECT 0 ")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
