@@ -181,7 +181,7 @@ app.get('/getAllPoints', function(req, res){
 app.get('/getPointsByCatagory', function(req, res){
     let category = req.body.category;
     DButilsAzure.execQuery(
-        "SELECT * FROM POINTS WHERE CATEGORIES = '" + category + "'")
+        "SELECT * FROM POINTS WHERE CATEGORY = '" + category + "'")
     .then(function(result){
         res.send(result)
     })
@@ -214,14 +214,39 @@ app.put('/addRank', function(req, res){
 //get all points by category.
 app.get('/getRandomPoints', function(req, res){
     let minimalRank = req.body.minimalRank;
-    if(rank < 0 || rank > 5){
+    if(minimalRank < 0 || minimalRank > 5){
         res.send("The minimal rank must be between 1 to 5")
     }
     else{
         DButilsAzure.execQuery(
-            "SELECT * FROM POINTS P WHERE P.[RANK] >= " + rank + "")
+            "SELECT * FROM POINTS P WHERE P.[RANK] >= " + minimalRank + "")
         .then(function(result){
-            res.send(result)
+            if(result.length>3){
+                let random1 = Math.floor(Math.random() * (result.length - 1 + 1) + 1);
+                let random2 = Math.floor(Math.random() * ((result.length -1) - 1 + 1) + 1);
+                if(random1==random2){
+                    if(random1!=0){
+                        random2-=1;
+                    }else{
+                        random2+=1; 
+                    }
+                }
+                let random3 = Math.floor(Math.random() * ((result.length-2) - 1 + 1) + 1);
+                if(random2==random3){
+                    if(random3!=0){
+                        random3-=1;
+                    }
+                    else{
+                        random3+=1;
+                    }
+                }
+                res.send(JSON.stringify(result[random1])+", "+JSON.stringify(result[random2])+", "+JSON.stringify(result[random3]));
+                console.log(result[random1]);
+            }
+            else{
+                res.send(result);
+            }
+
         })
         .catch(function(err){
             console.log(err)
@@ -259,7 +284,7 @@ app.post('/register', function (req, res) {
     let answer = req.body.answer;
     if(checkPassword(password)&&checkUserName(userName)){
         //USER CREATION 
-        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email +"') INSERT INTO Passwords VALUES ('" + userName + "' , HASHBYTES('SHA2_512' , '" + password + "' )) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
+        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email +"') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "' )) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
         .then(function (result) {
             res.send(result)
         })
