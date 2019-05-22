@@ -13,7 +13,7 @@ app.use(require('body-parser').json())
 
 secret = "ourSecret<3";
 
-app.post("/private", (req, res) => {
+app.use("/private", (req, res, next) => {
     const token = req.header("x-auth-token");
     // no token
     if (!token) res.status(401).send("Access denied. No token provided.");
@@ -21,6 +21,7 @@ app.post("/private", (req, res) => {
     try {
         const decoded = jwt.verify(token, secret);
         req.decoded = decoded;
+        // req.userName = req.decoded.name;
         next();
     } catch (exception) {
         res.status(400).send("Invalid token.");
@@ -29,9 +30,13 @@ app.post("/private", (req, res) => {
 
 app.get('/getPoint', function (req, res) {
     let pointName = req.body.pointName;
-    DButilsAzure.execQuery("SELECT top (2) p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] FROM [points] p inner join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
+    DButilsAzure.execQuery("SELECT top (2) p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] FROM [points] p left join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
         .then(function (result) {
-            res.send(result)
+            if (result.length == 0) {
+                res.send("no points to show");
+            } else {
+                res.send(result)
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -46,7 +51,7 @@ app.post('/logIn', function (req, res) {
     let password = req.body.password;
 
     DButilsAzure.execQuery(
-        "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = '" + password + "')) > 0 SELECT 1 ELSE SELECT 0 ")
+        "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = '" + password + "') > 0 SELECT 1 ELSE SELECT 0 ")
         .then(function (result) {
             payload = { name: userName };
             options = { expiresIn: "1d" };
@@ -76,14 +81,14 @@ app.post('/restorePassword', function (req, res) {
 })
 
 //add favorite point for a user
-app.put('/addSavePoint', function (req, res) {
-    let userName = req.body.userName;
+app.put('/private/addSavePoint', function (req, res) {
+    let userName = req.decoded.name;
     let pointName = req.body.pointName;
     let index = req.body.i;
     DButilsAzure.execQuery(
         "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO FavoritesPoint(USERNAME, [POINTID], [INDEX], DATE) VALUES('" + userName + "', @ID," + index + ", GETDATE())")
         .then(function (result) {
-            res.send(result)
+            res.send("add favorite point done")
         })
         .catch(function (err) {
             console.log(err)
@@ -92,10 +97,10 @@ app.put('/addSavePoint', function (req, res) {
 })
 
 //get last two saved points of user.
-app.get('/getLastTwoSavedPoints', function (req, res) {
-    let userName = req.body.userName;
+app.get('/private/getLastTwoSavedPoints', function (req, res) {
+    let userName = req.decoded.name;
     DButilsAzure.execQuery(
-        "SELECT top (2) p.[name] FROM [points] p inner join [favoritesPoint] f on f.[pointid]=p.[id] where f.[userName] = '" + userName + "' order by f.[date] DESC ")
+        "SELECT top (2) p.[name] FROM [points] p inner join [favoritesPoint] f on f.[pointid]=p.[id] where f.[userName] = '" + userName + "' order by f.[date] desc ")
         .then(function (result) {
             if (result.length == 0) {
                 res.send("no points saved");
@@ -109,14 +114,14 @@ app.get('/getLastTwoSavedPoints', function (req, res) {
         })
 })
 
-//get last two saved points of user.
-app.delete('/deleteSavedPoint', function (req, res) {
-    let userName = req.body.userName;
+//delete a favorite point of a user.
+app.delete('/private/deleteSavedPoint', function (req, res) {
+    let userName = req.decoded.name;
     let pointName = req.body.pointName;
     DButilsAzure.execQuery(
         "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint]  WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "'")
         .then(function (result) {
-            res.send(result)
+            res.send("done delete favorite point.")
         })
         .catch(function (err) {
             console.log(err)
@@ -125,8 +130,8 @@ app.delete('/deleteSavedPoint', function (req, res) {
 })
 
 //get the number of saved points of a user.
-app.get('/getNumSavedPoints', function (req, res) {
-    let userName = req.body.userName;
+app.get('/private/getNumSavedPoints', function (req, res) {
+    let userName = req.decoded.name;
     DButilsAzure.execQuery(
         "SELECT COUNT(*) FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
         .then(function (result) {
@@ -139,12 +144,16 @@ app.get('/getNumSavedPoints', function (req, res) {
 })
 
 //get all saved points of a user.
-app.get('/getSavedPoints', function (req, res) {
-    let userName = req.body.userName;
+app.get('/private/getSavedPoints', function (req, res) {
+    let userName = req.decoded.name;
     DButilsAzure.execQuery(
         "SELECT * FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
         .then(function (result) {
-            res.send(result)
+            if(result.length == 0){
+                res.send("no points to show");
+            }else{
+                res.send(result)
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -153,14 +162,14 @@ app.get('/getSavedPoints', function (req, res) {
 })
 
 //add new review to point.
-app.put('/addReview', function (req, res) {
-    let userName = req.body.userName;
+app.put('/private/addReview', function (req, res) {
+    let userName = req.decoded.name;
     let pointName = req.body.pointName;
     let review = req.body.review;
     DButilsAzure.execQuery(
         "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] ASC) + 1) END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE())")
         .then(function (result) {
-            res.send(result)
+            res.send("done add new review")
         })
         .catch(function (err) {
             console.log(err)
@@ -195,8 +204,8 @@ app.get('/getPointsByCatagory', function (req, res) {
         })
 })
 
-//get all points by category.
-app.put('/addRank', function (req, res) {
+
+app.put('/private/addRank', function (req, res) {
     let pointName = req.body.pointName;
     let rank = req.body.rank;
     if (rank < 0 || rank > 5) {
@@ -206,7 +215,7 @@ app.put('/addRank', function (req, res) {
         DButilsAzure.execQuery(
             "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFRANKS FROM [RANKS] R WHERE R.[POINTID] = @ID) DECLARE @LASTRANK AS FLOAT SET @LASTRANK = (SELECT [RANK] FROM [POINTS] P WHERE P.[ID] = @ID) DECLARE @NEWRANK AS FLOAT SET @NEWRANK = ((@LASTRANK*@NUM) + " + rank + ")/(@num + 1) UPDATE T SET T.[RANK] = @NEWRANK FROM POINTS T WHERE T.[ID] = @ID UPDATE F SET F.[NUMOFRANKS] = (@NUM+1) FROM RANKS F WHERE F.[POINTID] = @ID")
             .then(function (result) {
-                res.send(result)
+                res.send("done rank the point")
             })
             .catch(function (err) {
                 console.log(err)
@@ -215,7 +224,7 @@ app.put('/addRank', function (req, res) {
     }
 })
 
-//get all points by category.
+
 app.get('/getRandomPoints', function (req, res) {
     let minimalRank = req.body.minimalRank;
     if (minimalRank < 0 || minimalRank > 5) {
@@ -259,8 +268,8 @@ app.get('/getRandomPoints', function (req, res) {
     }
 })
 
-app.get('/getTwoPopularPoints', function (req, res) {
-    let userName = req.body.userName;
+app.get('/private/getTwoPopularPoints', function (req, res) {
+    let userName = req.decoded.name;
     DButilsAzure.execQuery("DECLARE @CATEGORY1 AS NVARCHAR (100) DECLARE @CATEGORY2 AS NVARCHAR (100) SET @CATEGORY1 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='" + userName + "' ORDER BY F.[CATEGORY] DESC ) SET @CATEGORY2 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='DORINZ' ORDER BY F.[CATEGORY] ASC ) SELECT TOP (1) [NAME] FROM [POINTS] P1 WHERE P1.[CATEGORY] = @CATEGORY1 SELECT TOP (1) [NAME] FROM [POINTS] P2 WHERE P2.[CATEGORY] = @CATEGORY2")
         .then(function (result) {
             res.send(result)
@@ -277,15 +286,13 @@ app.put('/increaseNumOfViews', function (req, res) {
     DButilsAzure.execQuery(
         "DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') UPDATE T SET T.[NUMOFVIEWS] = (@NUM+1) FROM POINTS T WHERE T.[NAME] = '" + pointName + "'")
         .then(function (result) {
-            res.send(result)
+            res.send("done increase the number of views.")
         })
         .catch(function (err) {
             console.log(err)
             res.send(err)
         })
 })
-
-
 
 
 //register
@@ -303,14 +310,17 @@ app.post('/register', function (req, res) {
     let answer = req.body.answer;
     if (checkPassword(password) && checkUserName(userName)) {
         //USER CREATION 
-        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email + "') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "' )) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
+        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email + "') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "' ) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
             .then(function (result) {
-                res.send(result)
+                res.send("Insert new user done.")
             })
             .catch(function (err) {
                 console.log(err)
                 res.send(err)
             })
+    }
+    else {
+        res.send("one or more of your inputs are wrong")
     }
 })
 
@@ -331,7 +341,7 @@ function checkUserName(userName) {
 //check valid password
 function checkPassword(password) {
     var patternPswd = /^(?!^[0-9]*$)(?!^[a-zA-Z]*$)^([a-zA-Z0-9]{3,8})$/;
-    if(!patternPswd.test(password)){
+    if (!patternPswd.test(password)) {
         console.log("password must to includes between 3-8 chars, and contain letters and numbers");
         return false;
     }
