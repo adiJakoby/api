@@ -46,7 +46,7 @@ app.post('/logIn', function(req, res){
     let password = req.body.password;
 
     DButilsAzure.execQuery(
-        "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = HASHBYTES('SHA2_512','" + password + "')) > 0 SELECT 1 ELSE SELECT 0 ")
+        "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = '" + password + "')) > 0 SELECT 1 ELSE SELECT 0 ")
     .then(function(result){      
         payload = { name: userName };
         options = { expiresIn: "1d" };
@@ -207,7 +207,7 @@ app.post('/register', function (req, res) {
     let answer = req.body.answer;
     if(checkPassword(password)&&checkUserName(userName)){
         //USER CREATION 
-        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email +"') ")//INSERT INTO Passwords VALUES ('" + userName + "' , HASHBYTES('SHA2_512' , '" + password + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
+        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email +"') INSERT INTO Passwords VALUES ('" + userName + "' , HASHBYTES('SHA2_512' , '" + password + "' )) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
         .then(function (result) {
             res.send(result)
         })
