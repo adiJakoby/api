@@ -69,7 +69,7 @@ app.post('/restorePassword', function(req, res){
     })
 })
 
-//restore password
+//add favorite point for a user
 app.put('/addSavePoint', function(req, res){
     let userName = req.body.userName;
     let pointName = req.body.pointName;
