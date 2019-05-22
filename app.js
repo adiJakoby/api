@@ -230,6 +230,19 @@ app.get('/getRandomPoints', function(req, res){
     }
 })
 
+app.get('/getTwoPopularPoints', function(req, res){
+    let userName = req.body.userName;
+    DButilsAzure.execQuery("DECLARE @CATEGORY1 AS NVARCHAR (100) DECLARE @CATEGORY2 AS NVARCHAR (100) SET @CATEGORY1 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='" + userName + "' ORDER BY F.[CATEGORY] DESC ) SET @CATEGORY2 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='DORINZ' ORDER BY F.[CATEGORY] ASC ) SELECT TOP (1) [NAME] FROM [POINTS] P1 WHERE P1.[CATEGORY] = @CATEGORY1 SELECT TOP (1) [NAME] FROM [POINTS] P2 WHERE P2.[CATEGORY] = @CATEGORY2")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+
 
 //register
 app.post('/register', function (req, res) {
