@@ -191,6 +191,45 @@ app.get('/getPointsByCatagory', function(req, res){
     })
 })
 
+//get all points by category.
+app.put('/addRank', function(req, res){
+    let pointName = req.body.pointName;
+    let rank = req.body.rank;
+    if(rank < 0 || rank > 5){
+        res.send("The rank must be between 1 to 5")
+    }
+    else{
+        DButilsAzure.execQuery(
+            "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFRANKS FROM [RANKS] R WHERE R.[POINTID] = @ID) DECLARE @LASTRANK AS FLOAT SET @LASTRANK = (SELECT [RANK] FROM [POINTS] P WHERE P.[ID] = @ID) DECLARE @NEWRANK AS FLOAT SET @NEWRANK = ((@LASTRANK*@NUM) + " + rank + ")/(@num + 1) UPDATE T SET T.[RANK] = @NEWRANK FROM POINTS T WHERE T.[ID] = @ID UPDATE F SET F.[NUMOFRANKS] = (@NUM+1) FROM RANKS F WHERE F.[POINTID] = @ID")
+        .then(function(result){
+            res.send(result)
+        })
+        .catch(function(err){
+            console.log(err)
+            res.send(err)
+        })
+    }
+})
+
+//get all points by category.
+app.get('/getRandomPoints', function(req, res){
+    let minimalRank = req.body.minimalRank;
+    if(rank < 0 || rank > 5){
+        res.send("The minimal rank must be between 1 to 5")
+    }
+    else{
+        DButilsAzure.execQuery(
+            "SELECT * FROM POINTS P WHERE P.[RANK] >= " + rank + "")
+        .then(function(result){
+            res.send(result)
+        })
+        .catch(function(err){
+            console.log(err)
+            res.send(err)
+        })
+    }
+})
+
 
 //register
 app.post('/register', function (req, res) {
