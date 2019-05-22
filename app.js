@@ -69,3 +69,50 @@ app.post('/restorePassword', function(req, res){
     })
 })
 
+//restore password
+app.put('/addSavePoint', function(req, res){
+    let userName = req.body.userName;
+    let pointName = req.body.pointName;
+    let index = req.body.index;
+    DButilsAzure.execQuery(
+        "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO FavoritesPoint(USERNAME, POINTID, INDEX, DATE) VALUES('" + userName + "', @ID, '" + index + "', GETDATE())")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+//get last two saved points of user.
+app.get('/getLastTwoSavedPoints', function(req, res){
+    let userName = req.query.userName;
+    DButilsAzure.execQuery(
+        "SELECT top (2) p.[pointName] FROM [points] p inner join [favoritesPoint] f on f.[pointid]=p.[pointid] where f.[userName] = '" + userName + "' order by f.[date] ASC ")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+//get last two saved points of user.
+app.delete('/DeleteSavedPoint', function(req, res){
+    let userName = req.query.userName;
+    let pointName = req.query.pointName;
+    DButilsAzure.execQuery(
+        "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint] F WHERE F[POINTID] = @ID")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+
+
