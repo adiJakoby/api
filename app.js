@@ -172,6 +172,7 @@ app.get('/getAllPoints', function(req, res){
     })
 })
 
+
 //register
 app.post('/register', function (req, res) {
     let userName = req.body.userName;
@@ -187,7 +188,7 @@ app.post('/register', function (req, res) {
     let answer = req.body.answer;
     if(checkPassword(password)&&checkUserName(userName)){
         //USER CREATION 
-        DButilsAzure.execQuery("INSERT INTO USERS U VALUES ('" + userName + "','" + firstName + "', " + lastName + "', " + city + "' , '" + country + "' , '" + email +"') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
+        DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email +"') ")//INSERT INTO Passwords VALUES ('" + userName + "' , HASHBYTES('SHA2_512' , '" + password + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
         .then(function (result) {
             res.send(result)
         })
@@ -202,22 +203,26 @@ app.post('/register', function (req, res) {
 function checkUserName(userName) {
     if (!(/^[a-zA-Z]+$/.test(userName))) {
         // alert - user name have to include only letters
+        console.log("username must contains only letters");
         return false;
     }
     if (userName.length > 8 || userName.length < 3) {
         //alert user name have to includes between 3-8 chars
+        console.log("user name have to includes between 3-8 chars");
         return false;
     }
     return true;
 }
 //check valid password
 function checkPassword(password) {
-    if (!(password.matches("^(?=.*[A-Z])(?=.*[0-9])[A-Z0-9]+$"))) {
-        //alers pass must contain only letters and numbers
-        return false;
-    }
+    //let pattern = /[a-zA-Z]+[(@!#\$%\^\&*\)\(+=._-]{1,}/;
+    // if (!validate.isAlphanumeric(password, 'en-US')) {
+    //     console.log("Not an alphanumeric");
+    //     return false;
+    // }
     if (password.length > 8 || password.length < 3) {
         //alert password have to includes between 3-8 chars
+        console.log("password must to includes between 3-8 chars");
         return false;
     }
     return true;
