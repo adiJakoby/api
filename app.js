@@ -87,9 +87,9 @@ app.put('/addSavePoint', function(req, res){
 
 //get last two saved points of user.
 app.get('/getLastTwoSavedPoints', function(req, res){
-    let userName = req.query.userName;
+    let userName = req.body.userName;
     DButilsAzure.execQuery(
-        "SELECT top (2) p.[pointName] FROM [points] p inner join [favoritesPoint] f on f.[pointid]=p.[pointid] where f.[userName] = '" + userName + "' order by f.[date] ASC ")
+        "SELECT top (2) p.[name] FROM [points] p inner join [favoritesPoint] f on f.[pointid]=p.[id] where f.[userName] = '" + userName + "' order by f.[date] DESC ")
     .then(function(result){
         res.send(result)
     })
@@ -101,8 +101,8 @@ app.get('/getLastTwoSavedPoints', function(req, res){
 
 //get last two saved points of user.
 app.delete('/deleteSavedPoint', function(req, res){
-    let userName = req.query.userName;
-    let pointName = req.query.pointName;
+    let userName = req.body.userName;
+    let pointName = req.body.pointName;
     DButilsAzure.execQuery(
         "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint] F WHERE F[POINTID] = @ID AND F[USERNAME] = '" + userName + "'")
     .then(function(result){
@@ -116,7 +116,7 @@ app.delete('/deleteSavedPoint', function(req, res){
 
 //get the number of saved points of a user.
 app.get('/getNumSavedPoints', function(req, res){
-    let userName = req.query.userName;
+    let userName = req.body.userName;
     DButilsAzure.execQuery(
         "SELECT COUNT(*) FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
     .then(function(result){
@@ -130,7 +130,7 @@ app.get('/getNumSavedPoints', function(req, res){
 
 //get all saved points of a user.
 app.get('/getSavedPoints', function(req, res){
-    let userName = req.query.userName;
+    let userName = req.body.userName;
     DButilsAzure.execQuery(
         "SELECT * FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
     .then(function(result){
