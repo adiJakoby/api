@@ -148,7 +148,7 @@ app.put('/addReview', function(req, res){
     let pointName = req.query.pointName;
     let review = req.query.review;
     DButilsAzure.execQuery(
-        "DECLARE @RID AS INT SET @RID = (SELECT TOP (1) ID FROM [REVIEWS] R order by R.[ID] ASC) + 1 DECLARE @PID AS INT SET @PID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, POINTID, REVIEW, DATE) VALUES(@RID, @PID, '" + review + "')")
+        "DECLARE @RID AS INT SET @RID = (SELECT TOP (1) ID FROM [REVIEWS] R order by R.[ID] ASC) + 1 DECLARE @PID AS INT SET @PID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, DATE) VALUES(@RID, '" + userName + "', @PID, '" + review + "')")
     .then(function(result){
         res.send(result)
     })
