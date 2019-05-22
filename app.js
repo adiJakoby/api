@@ -73,9 +73,9 @@ app.post('/restorePassword', function(req, res){
 app.put('/addSavePoint', function(req, res){
     let userName = req.body.userName;
     let pointName = req.body.pointName;
-    let index = req.body.index;
+    let index = req.body.i;
     DButilsAzure.execQuery(
-        "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO FavoritesPoint(USERNAME, POINTID, INDEX, DATE) VALUES('" + userName + "', @ID, '" + index + "', GETDATE())")
+        "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO FavoritesPoint(USERNAME, [POINTID], [INDEX], DATE) VALUES('" + userName +"', @ID," + index + ", GETDATE())")
     .then(function(result){
         res.send(result)
     })
