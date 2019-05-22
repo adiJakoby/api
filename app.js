@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var DButilsAzure = require('./DButils');
+var jwt=require('jsonwebtoken');
 
 
 var port = 3000;
@@ -10,22 +11,24 @@ app.listen(port, function () {
 
 app.use(require('body-parser').json())
 
-//Example
-// app.get('/select', function(req, res){
-//     DButilsAzure.execQuery("SELECT * FROM names")
-//     .then(function(result){
-//         res.send(result)
-//     })
-//     .catch(function(err){
-//         console.log(err)
-//         res.send(err)
-//     })
-// })
+secret = "ourSecret<3";
 
+app.post("/private", (req, res) => {
+    const token = req.header("x-auth-token");
+    // no token
+    if (!token) res.status(401).send("Access denied. No token provided.");
+    // verify token
+    try {
+        const decoded = jwt.verify(token, secret);
+        req.decoded = decoded;
+        next();
+    } catch (exception) {
+        res.status(400).send("Invalid token.");
+    }
+});
 
 app.get('/getPoint', function(req, res){
-    let pointName = req.query.pointName;
-    // console.log("**************" + pointName);
+    let pointName = req.body.pointName;
     DButilsAzure.execQuery("SELECT top (2) p.[description], p.[rank], p.[numofviews] , r.[review] FROM [points] p inner join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
     .then(function(result){
         res.send(result)
@@ -41,11 +44,14 @@ app.get('/getPoint', function(req, res){
 app.post('/logIn', function(req, res){
     let userName = req.body.userName;
     let password = req.body.password;
-    // console.log("**************" + userName + "   " + password);
+
     DButilsAzure.execQuery(
         "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = HASHBYTES('SHA2_512','" + password + "')) > 0 SELECT 1 ELSE SELECT 0 ")
-    .then(function(result){
-        res.send(result)
+    .then(function(result){      
+        payload = { name: userName };
+        options = { expiresIn: "1d" };
+        const token = jwt.sign(payload, secret, options); 
+        res.send(token)
     })
     .catch(function(err){
         console.log(err)
@@ -104,7 +110,7 @@ app.delete('/deleteSavedPoint', function(req, res){
     let userName = req.body.userName;
     let pointName = req.body.pointName;
     DButilsAzure.execQuery(
-        "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint] F WHERE F[POINTID] = @ID AND F[USERNAME] = '" + userName + "'")
+        "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint]  WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "'")
     .then(function(result){
         res.send(result)
     })
@@ -144,11 +150,11 @@ app.get('/getSavedPoints', function(req, res){
 
 //add new review to point.
 app.put('/addReview', function(req, res){
-    let userName = req.query.userName;
-    let pointName = req.query.pointName;
-    let review = req.query.review;
+    let userName = req.body.userName;
+    let pointName = req.body.pointName;
+    let review = req.body.review;
     DButilsAzure.execQuery(
-        "DECLARE @RID AS INT SET @RID = (SELECT TOP (1) ID FROM [REVIEWS] R order by R.[ID] ASC) + 1 DECLARE @PID AS INT SET @PID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, DATE) VALUES(@RID, '" + userName + "', @PID, '" + review + "')")
+        "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] ASC) + 1) SELECT COUNT(*) FROM [REVIEWS] END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE())")
     .then(function(result){
         res.send(result)
     })
@@ -160,9 +166,22 @@ app.put('/addReview', function(req, res){
 
 //get all points.
 app.get('/getAllPoints', function(req, res){
-    let review = req.query.review;
     DButilsAzure.execQuery(
         "SELECT * FROM POINTS")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+//get all points by category.
+app.get('/getPointsByCatagory', function(req, res){
+    let category = req.body.category;
+    DButilsAzure.execQuery(
+        "SELECT * FROM POINTS WHERE CATEGORIES = '" + category + "'")
     .then(function(result){
         res.send(result)
     })
