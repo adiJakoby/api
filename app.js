@@ -172,4 +172,59 @@ app.get('/getAllPoints', function(req, res){
     })
 })
 
+//register
+app.post('/register', function (req, res) {
+    let userName = req.body.userName;
+    let firstName = req.body.firstName;
+    let lastName = req.body.lastName;
+    let password = req.body.password;
+    let city = req.body.city;
+    let country = req.body.country;
+    let email = req.body.email;
+    let domain1 = req.body.domain1;
+    let domain2 = req.body.domain2;
+    let question = req.body.question;
+    let answer = req.body.answer;
+    if(checkPassword(password)&&checkUserName(userName)){
+        //USER CREATION 
+        DButilsAzure.execQuery("INSERT INTO USERS U VALUES ('" + userName + "','" + firstName + "', " + lastName + "', " + city + "' , '" + country + "' , '" + email +"') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
+        .then(function (result) {
+            res.send(result)
+        })
+        .catch(function (err) {
+            console.log(err)
+            res.send(err)
+        })
+    }
+})
 
+//check valide user name
+function checkUserName(userName) {
+    if (!(/^[a-zA-Z]+$/.test(userName))) {
+        // alert - user name have to include only letters
+        return false;
+    }
+    if (userName.length > 8 || userName.length < 3) {
+        //alert user name have to includes between 3-8 chars
+        return false;
+    }
+    return true;
+}
+//check valid password
+function checkPassword(password) {
+    if (!(password.matches("^(?=.*[A-Z])(?=.*[0-9])[A-Z0-9]+$"))) {
+        //alers pass must contain only letters and numbers
+        return false;
+    }
+    if (password.length > 8 || password.length < 3) {
+        //alert password have to includes between 3-8 chars
+        return false;
+    }
+    return true;
+}
+
+function checkCountry(country){
+    let xml = fs.readFile("countries.xml",function(err, data){
+
+    } )
+} 
