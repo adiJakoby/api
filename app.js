@@ -267,6 +267,21 @@ app.get('/getTwoPopularPoints', function(req, res){
     })
 })
 
+//increase by 1 the number of views of a point.
+app.put('/increaseNumOfViews', function(req, res){
+    let pointName = req.body.pointName;
+    DButilsAzure.execQuery(
+        "DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') UPDATE T SET T.[NUMOFVIEWS] = (@NUM+1) FROM POINTS T WHERE T.[NAME] = '" + pointName + "'")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+
 
 
 //register
