@@ -100,11 +100,11 @@ app.get('/getLastTwoSavedPoints', function(req, res){
 })
 
 //get last two saved points of user.
-app.delete('/DeleteSavedPoint', function(req, res){
+app.delete('/deleteSavedPoint', function(req, res){
     let userName = req.query.userName;
     let pointName = req.query.pointName;
     DButilsAzure.execQuery(
-        "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint] F WHERE F[POINTID] = @ID")
+        "DECLARE @ID AS INT SET @ID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint] F WHERE F[POINTID] = @ID AND F[USERNAME] = '" + userName + "'")
     .then(function(result){
         res.send(result)
     })
@@ -114,5 +114,62 @@ app.delete('/DeleteSavedPoint', function(req, res){
     })
 })
 
+//get the number of saved points of a user.
+app.get('/getNumSavedPoints', function(req, res){
+    let userName = req.query.userName;
+    DButilsAzure.execQuery(
+        "SELECT COUNT(*) FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+//get all saved points of a user.
+app.get('/getSavedPoints', function(req, res){
+    let userName = req.query.userName;
+    DButilsAzure.execQuery(
+        "SELECT * FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+//add new review to point.
+app.put('/addReview', function(req, res){
+    let userName = req.query.userName;
+    let pointName = req.query.pointName;
+    let review = req.query.review;
+    DButilsAzure.execQuery(
+        "DECLARE @RID AS INT SET @RID = (SELECT TOP (1) ID FROM [REVIEWS] R order by R.[ID] ASC) + 1 DECLARE @PID AS INT SET @PID = (SELECT POINTID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, POINTID, REVIEW, DATE) VALUES(@RID, @PID, '" + review + "')")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
+
+//get all points.
+app.get('/getAllPoints', function(req, res){
+    let review = req.query.review;
+    DButilsAzure.execQuery(
+        "SELECT * FROM POINTS")
+    .then(function(result){
+        res.send(result)
+    })
+    .catch(function(err){
+        console.log(err)
+        res.send(err)
+    })
+})
 
 
