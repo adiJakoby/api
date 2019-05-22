@@ -29,7 +29,7 @@ app.post("/private", (req, res) => {
 
 app.get('/getPoint', function(req, res){
     let pointName = req.body.pointName;
-    DButilsAzure.execQuery("SELECT top (2) p.[description], p.[rank], p.[numofviews] , r.[review] FROM [points] p inner join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
+    DButilsAzure.execQuery("SELECT top (2) p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] FROM [points] p inner join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
     .then(function(result){
         res.send(result)
     })
@@ -154,7 +154,7 @@ app.put('/addReview', function(req, res){
     let pointName = req.body.pointName;
     let review = req.body.review;
     DButilsAzure.execQuery(
-        "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] ASC) + 1) SELECT COUNT(*) FROM [REVIEWS] END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE())")
+        "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] ASC) + 1) END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE())")
     .then(function(result){
         res.send(result)
     })
