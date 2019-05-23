@@ -51,12 +51,16 @@ app.post('/logIn', function (req, res) {
     let password = req.body.password;
 
     DButilsAzure.execQuery(
-        "IF ( SELECT COUNT (*) FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = '" + password + "') > 0 SELECT 1 ELSE SELECT 0 ")
+        "SELECT * FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '" + userName + "' AND P.[PASSWORD] = '" + password + "'")
         .then(function (result) {
-            payload = { name: userName };
-            options = { expiresIn: "1d" };
-            const token = jwt.sign(payload, secret, options);
-            res.send(token)
+            if (result.length > 0) {
+                payload = { name: userName };
+                options = { expiresIn: "1d" };
+                const token = jwt.sign(payload, secret, options);
+                res.send(token)
+            } else {
+                res.send("one or more of your inputs are wrong")
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -70,9 +74,14 @@ app.post('/restorePassword', function (req, res) {
     let question = req.body.question;
     let answer = req.body.answer;
     DButilsAzure.execQuery(
-        "IF ( SELECT COUNT (*) FROM [dbo].[Questions] Q WHERE Q.[USERNAME] = '" + userName + "' AND Q.[QUESTION] = '" + question + "' AND Q.[ANSWER] = '" + answer + "') = 1 SELECT * FROM [dbo].[Passwords] P WHERE P.[USERNAME] = username")
+        "IF ( SELECT COUNT (*) FROM [dbo].[Questions] Q WHERE Q.[USERNAME] = '" + userName + "' AND Q.[QUESTION] = '" + question + "' AND Q.[ANSWER] = '" + answer + "') = 1 SELECT * FROM [dbo].[Passwords] P WHERE P.[USERNAME] = '"+ userName + "'")
         .then(function (result) {
-            res.send(result)
+            if(result.length > 0){
+                res.send(result)
+            }
+            else{
+                res.send("one or more of your inputs are wrong")
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -119,9 +128,14 @@ app.delete('/private/deleteSavedPoint', function (req, res) {
     let userName = req.decoded.name;
     let pointName = req.body.pointName;
     DButilsAzure.execQuery(
-        "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DELETE FROM [FavoritesPoint]  WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "'")
+        "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') SELECT * FROM [FavoritesPoint] WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "' DELETE FROM [FavoritesPoint]  WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "'")
         .then(function (result) {
-            res.send("done delete favorite point.")
+            if(result.length > 0){
+                res.send("done delete favorite point.")
+            }
+            else{
+                res.send("no point to delete.")
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -149,9 +163,9 @@ app.get('/private/getSavedPoints', function (req, res) {
     DButilsAzure.execQuery(
         "SELECT * FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
         .then(function (result) {
-            if(result.length == 0){
+            if (result.length == 0) {
                 res.send("no points to show");
-            }else{
+            } else {
                 res.send(result)
             }
         })
@@ -167,9 +181,14 @@ app.put('/private/addReview', function (req, res) {
     let pointName = req.body.pointName;
     let review = req.body.review;
     DButilsAzure.execQuery(
-        "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] ASC) + 1) END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE())")
+        "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] desc) + 1) END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE()) SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "'")
         .then(function (result) {
-            res.send("done add new review")
+            if(result.length > 0){
+                res.send("done add new review")
+            }
+            else{
+                res.send("no such point")
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -196,7 +215,12 @@ app.get('/getPointsByCatagory', function (req, res) {
     DButilsAzure.execQuery(
         "SELECT * FROM POINTS WHERE CATEGORY = '" + category + "'")
         .then(function (result) {
-            res.send(result)
+            if(result.length > 0){
+                res.send(result)
+            }
+            else{
+                res.send("no such category")
+            }
         })
         .catch(function (err) {
             console.log(err)
@@ -213,9 +237,14 @@ app.put('/private/addRank', function (req, res) {
     }
     else {
         DButilsAzure.execQuery(
-            "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFRANKS FROM [RANKS] R WHERE R.[POINTID] = @ID) DECLARE @LASTRANK AS FLOAT SET @LASTRANK = (SELECT [RANK] FROM [POINTS] P WHERE P.[ID] = @ID) DECLARE @NEWRANK AS FLOAT SET @NEWRANK = ((@LASTRANK*@NUM) + " + rank + ")/(@num + 1) UPDATE T SET T.[RANK] = @NEWRANK FROM POINTS T WHERE T.[ID] = @ID UPDATE F SET F.[NUMOFRANKS] = (@NUM+1) FROM RANKS F WHERE F.[POINTID] = @ID")
+            "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFRANKS FROM [RANKS] R WHERE R.[POINTID] = @ID) DECLARE @LASTRANK AS FLOAT SET @LASTRANK = (SELECT [RANK] FROM [POINTS] P WHERE P.[ID] = @ID) DECLARE @NEWRANK AS FLOAT SET @NEWRANK = ((@LASTRANK*@NUM) + " + rank + ")/(@num + 1) UPDATE T SET T.[RANK] = @NEWRANK FROM POINTS T WHERE T.[ID] = @ID UPDATE F SET F.[NUMOFRANKS] = (@NUM+1) FROM RANKS F WHERE F.[POINTID] = @ID SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "'")
             .then(function (result) {
-                res.send("done rank the point")
+                if(result.length > 0){
+                    res.send("done rank the point")
+                }
+                else{
+                    res.send("no such point")
+                }
             })
             .catch(function (err) {
                 console.log(err)
@@ -253,7 +282,7 @@ app.get('/getRandomPoints', function (req, res) {
                             random3 += 1;
                         }
                     }
-                    res.send(JSON.stringify(result[random1]) + ", " + JSON.stringify(result[random2]) + ", " + JSON.stringify(result[random3]));
+                    res.send(JSON.stringify(result[random1]) + "\n" + JSON.stringify(result[random2]) + "\n" + JSON.stringify(result[random3]));
                     console.log(result[random1]);
                 }
                 else {
@@ -284,9 +313,14 @@ app.get('/private/getTwoPopularPoints', function (req, res) {
 app.put('/increaseNumOfViews', function (req, res) {
     let pointName = req.body.pointName;
     DButilsAzure.execQuery(
-        "DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') UPDATE T SET T.[NUMOFVIEWS] = (@NUM+1) FROM POINTS T WHERE T.[NAME] = '" + pointName + "'")
+        "DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') UPDATE T SET T.[NUMOFVIEWS] = (@NUM+1) FROM POINTS T WHERE T.[NAME] = '" + pointName + "' SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "'")
         .then(function (result) {
-            res.send("done increase the number of views.")
+            if(result.length > 0){
+                res.send("done increase the number of views.")
+            }
+            else{
+                res.send("no such point.")
+            }
         })
         .catch(function (err) {
             console.log(err)
