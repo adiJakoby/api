@@ -2,6 +2,8 @@ var express = require('express');
 var app = express();
 var DButilsAzure = require('./DButils');
 var jwt = require('jsonwebtoken');
+var fs = require('fs');
+var parser = require('xml2json')
 
 
 var port = 3000;
@@ -10,6 +12,10 @@ app.listen(port, function () {
 });
 
 app.use(require('body-parser').json())
+
+let xml = fs.readFile("./countries.xml", function (err, data) {
+    countries = JSON.parse(parser.toJson(data))
+});
 
 secret = "ourSecret<3";
 
@@ -342,7 +348,7 @@ app.post('/register', function (req, res) {
     let domain2 = req.body.domain2;
     let question = req.body.question;
     let answer = req.body.answer;
-    if (checkPassword(password) && checkUserName(userName)) {
+    if (checkPassword(password) && checkUserName(userName) && checkCountry(country)) {
         //USER CREATION 
         DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email + "') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "' ) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
             .then(function (result) {
@@ -383,7 +389,10 @@ function checkPassword(password) {
 }
 
 function checkCountry(country) {
-    let xml = fs.readFile("countries.xml", function (err, data) {
-
-    })
+    for(var i = 0; i < countries.Countries.Country.length; i++){
+        if(countries.Countries.Country[i].Name == country){
+            return true;
+        }
+    }
+    return false;
 } 
