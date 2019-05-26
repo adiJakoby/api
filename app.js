@@ -348,7 +348,7 @@ app.post('/register', function (req, res) {
     let domain2 = req.body.domain2;
     let question = req.body.question;
     let answer = req.body.answer;
-    if (checkPassword(password) && checkUserName(userName) && checkCountry(country)) {
+    if (checkPassword(password) && checkUserName(userName) && checkCountry(country) && checkEmail(email)) {
         //USER CREATION 
         DButilsAzure.execQuery("INSERT INTO USERS VALUES ('" + userName + "','" + firstName + "', '" + lastName + "', '" + city + "' , '" + country + "' , '" + email + "') INSERT INTO Passwords VALUES ('" + userName + "' , '" + password + "' ) INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain1 + "') INSERT INTO FavoritesCategories VALUES ('" + userName + "' , '" + domain2 + "') INSERT INTO Questions VALUES('" + userName + "' , '" + question + "', '" + answer + "' )")
             .then(function (result) {
@@ -395,4 +395,13 @@ function checkCountry(country) {
         }
     }
     return false;
+} 
+
+function checkEmail(email) {
+    var patternEmail = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (!patternEmail.test(email)) {
+        console.log("the email you insert is not valid");
+        return false;
+    }
+    return true;
 } 
