@@ -19,6 +19,12 @@ let xml = fs.readFile("./countries.xml", function (err, data) {
 
 secret = "ourSecret<3";
 
+app.use(function(req, res, next){
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 app.use("/private", (req, res, next) => {
     const token = req.header("x-auth-token");
     // no token
@@ -53,6 +59,10 @@ app.get('/getPoint', function (req, res) {
 
 //login
 app.post('/logIn', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
     let userName = req.body.userName;
     let password = req.body.password;
 
@@ -204,6 +214,10 @@ app.put('/private/addReview', function (req, res) {
 
 //get all points.
 app.get('/getAllPoints', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
     DButilsAzure.execQuery(
         "SELECT * FROM POINTS")
         .then(function (result) {
@@ -217,6 +231,10 @@ app.get('/getAllPoints', function (req, res) {
 
 //get all points by category.
 app.get('/getPointsByCatagory', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
     let category = req.body.category;
     DButilsAzure.execQuery(
         "SELECT * FROM POINTS WHERE CATEGORY = '" + category + "'")
@@ -236,6 +254,10 @@ app.get('/getPointsByCatagory', function (req, res) {
 
 
 app.put('/private/addRank', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
     let pointName = req.body.pointName;
     let rank = req.body.rank;
     if (rank < 0 || rank > 5) {
@@ -261,7 +283,11 @@ app.put('/private/addRank', function (req, res) {
 
 
 app.get('/getRandomPoints', function (req, res) {
-    let minimalRank = req.body.minimalRank;
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
+    let minimalRank = req.query.minimalRank;
     if (minimalRank < 0 || minimalRank > 5) {
         res.send("The minimal rank must be between 1 to 5")
     }
@@ -317,6 +343,10 @@ app.get('/private/getTwoPopularPoints', function (req, res) {
 
 //increase by 1 the number of views of a point.
 app.put('/increaseNumOfViews', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
     let pointName = req.body.pointName;
     DButilsAzure.execQuery(
         "DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') UPDATE T SET T.[NUMOFVIEWS] = (@NUM+1) FROM POINTS T WHERE T.[NAME] = '" + pointName + "' SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "'")
@@ -337,6 +367,10 @@ app.put('/increaseNumOfViews', function (req, res) {
 
 //register
 app.post('/register', function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
     let userName = req.body.userName;
     let firstName = req.body.firstName;
     let lastName = req.body.lastName;
