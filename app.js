@@ -4,12 +4,16 @@ var DButilsAzure = require('./DButils');
 var jwt = require('jsonwebtoken');
 var fs = require('fs');
 var parser = require('xml2json')
+var cors = require('cors');
 
 
 var port = 3000;
 app.listen(port, function () {
     console.log('Example app listening on port ' + port);
 });
+
+app.use(cors());
+app.options('*',cors());
 
 app.use(require('body-parser').json())
 
@@ -331,7 +335,7 @@ app.get('/getRandomPoints', function (req, res) {
 
 app.get('/private/getTwoPopularPoints', function (req, res) {
     let userName = req.decoded.name;
-    DButilsAzure.execQuery("DECLARE @CATEGORY1 AS NVARCHAR (100) DECLARE @CATEGORY2 AS NVARCHAR (100) SET @CATEGORY1 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='" + userName + "' ORDER BY F.[CATEGORY] DESC ) SET @CATEGORY2 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='DORINZ' ORDER BY F.[CATEGORY] ASC ) SELECT TOP (1) [NAME] FROM [POINTS] P1 WHERE P1.[CATEGORY] = @CATEGORY1 SELECT TOP (1) [NAME] FROM [POINTS] P2 WHERE P2.[CATEGORY] = @CATEGORY2")
+    DButilsAzure.execQuery("DECLARE @CATEGORY1 AS NVARCHAR (100) DECLARE @CATEGORY2 AS NVARCHAR (100) SET @CATEGORY1 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='" + userName + "' ORDER BY F.[CATEGORY] DESC ) SET @CATEGORY2 = (SELECT TOP (1) F.[CATEGORY] FROM [FavoritesCategories] F WHERE F.[USERNAME]='" + userName + "' ORDER BY F.[CATEGORY] ASC ) SELECT TOP (1) [NAME] FROM [POINTS] P1 WHERE P1.[CATEGORY] = @CATEGORY1 SELECT TOP (1) [NAME] FROM [POINTS] P2 WHERE P2.[CATEGORY] = @CATEGORY2")
         .then(function (result) {
             res.send(result)
         })
