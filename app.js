@@ -45,8 +45,8 @@ app.use("/private", (req, res, next) => {
 });
 
 app.get('/getPoint', function (req, res) {
-    let pointName = req.body.pointName;
-    DButilsAzure.execQuery("SELECT top (2) p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] FROM [points] p left join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
+    let pointName = req.query.pointName;
+    DButilsAzure.execQuery("SELECT top (2) p.[NAME] , p.[PICTURE] ,p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] FROM [points] p left join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
         .then(function (result) {
             if (result.length == 0) {
                 res.send("no points to show");
@@ -181,7 +181,7 @@ app.get('/private/getNumSavedPoints', function (req, res) {
 app.get('/private/getSavedPoints', function (req, res) {
     let userName = req.decoded.name;
     DButilsAzure.execQuery(
-        "SELECT * FROM FAVORITESPOINT WHERE USERNAME = '" + userName + "'")
+        "select p.[ID], p.[NAME], p.[PICTURE], p.[DESCRIPTION], p.[RANK], p.[CITY], p.[CATEGORY], p.[NUMOFVIEWS] from [dbo].[Points] p inner join [FavoritesPoint] f on p.ID=f.POINTID where f.[USERNAME]= '" + userName + "'")
         .then(function (result) {
             if (result.length == 0) {
                 res.send("no points to show");
