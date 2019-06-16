@@ -112,8 +112,8 @@ app.post('/restorePassword', function (req, res) {
 //add favorite point for a user
 app.put('/private/addSavePoint', function (req, res) {
     let userName = req.decoded.name;
-    let pointName = req.body.pointName;
-    let index = req.body.i;
+    let pointName = req.query.pointName;
+    let index = req.query.i;
     DButilsAzure.execQuery(
         "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO FavoritesPoint(USERNAME, [POINTID], [INDEX], DATE) VALUES('" + userName + "', @ID," + index + ", GETDATE())")
         .then(function (result) {
@@ -146,7 +146,7 @@ app.get('/private/getLastTwoSavedPoints', function (req, res) {
 //delete a favorite point of a user.
 app.delete('/private/deleteSavedPoint', function (req, res) {
     let userName = req.decoded.name;
-    let pointName = req.body.pointName;
+    let pointName = req.query.pointName;
     DButilsAzure.execQuery(
         "DECLARE @ID AS INT SET @ID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') SELECT * FROM [FavoritesPoint] WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "' DELETE FROM [FavoritesPoint]  WHERE [POINTID] = @ID AND [USERNAME] = '" + userName + "'")
         .then(function (result) {
