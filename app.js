@@ -181,7 +181,7 @@ app.get('/private/getNumSavedPoints', function (req, res) {
 app.get('/private/getSavedPoints', function (req, res) {
     let userName = req.decoded.name;
     DButilsAzure.execQuery(
-        "select p.[ID], p.[NAME], p.[PICTURE], p.[DESCRIPTION], p.[RANK], p.[CITY], p.[CATEGORY], p.[NUMOFVIEWS] from [dbo].[Points] p inner join [FavoritesPoint] f on p.ID=f.POINTID where f.[USERNAME]= '" + userName + "'")
+        "select p.[ID], p.[NAME], p.[PICTURE], p.[DESCRIPTION], p.[RANK], p.[CITY], p.[CATEGORY], p.[NUMOFVIEWS] from [dbo].[Points] p inner join [FavoritesPoint] f on p.ID=f.POINTID where f.[USERNAME]= '" + userName + "' order by f.[index] asc")
         .then(function (result) {
             if (result.length == 0) {
                 res.send("no points to show");
