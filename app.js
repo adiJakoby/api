@@ -46,7 +46,7 @@ app.use("/private", (req, res, next) => {
 
 app.get('/getPoint', function (req, res) {
     let pointName = req.query.pointName;
-    DButilsAzure.execQuery("SELECT top (2) p.[NAME] , p.[PICTURE] ,p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] FROM [points] p left join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
+    DButilsAzure.execQuery("SELECT top (2) p.[NAME] , p.[PICTURE] ,p.[description], p.[rank], p.[numofviews] , CASE WHEN r.[review] IS NOT NULL THEN r.[review] ELSE 'NO REVIEW TO SHOW'  END AS [REVIEW] , r.[DATE] FROM [points] p left join [reviews] r on p.[id]=r.[pointid] where p.[name] = '" + pointName + "' order by r.[date] ASC ")
         .then(function (result) {
             if (result.length == 0) {
                 res.send("no points to show");
@@ -198,8 +198,8 @@ app.get('/private/getSavedPoints', function (req, res) {
 //add new review to point.
 app.put('/private/addReview', function (req, res) {
     let userName = req.decoded.name;
-    let pointName = req.body.pointName;
-    let review = req.body.review;
+    let pointName = req.query.pointName;
+    let review = req.query.review;
     DButilsAzure.execQuery(
         "DECLARE @RID1 AS INT SET @RID1 =  0 SET @RID1 = (SELECT COUNT(*) FROM [REVIEWS] R ) DECLARE @RID AS INT SET @RID = 0 IF (@RID1 > 0) BEGIN SET @RID = ((SELECT TOP (1) [ID] FROM [REVIEWS] R ORDER BY R.[ID] desc) + 1) END DECLARE @PID AS INT SET @PID = (SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') INSERT INTO REVIEWS(ID, USERNAME, POINTID, REVIEW, [DATE]) VALUES(@RID, '" + userName + "', @PID, '" + review + "', GETDATE()) SELECT ID FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "'")
         .then(function (result) {
@@ -239,7 +239,7 @@ app.get('/getPointsByCatagory', function (req, res) {
     res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
 
-    let category = req.body.category;
+    let category = req.query.category;
     DButilsAzure.execQuery(
         "SELECT * FROM POINTS WHERE CATEGORY = '" + category + "'")
         .then(function (result) {
@@ -262,8 +262,8 @@ app.put('/private/addRank', function (req, res) {
     res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
 
-    let pointName = req.body.pointName;
-    let rank = req.body.rank;
+    let pointName = req.query.pointName;
+    let rank = req.query.rank;
     if (rank < 0 || rank > 5) {
         res.send("The rank must be between 1 to 5")
     }
@@ -351,7 +351,7 @@ app.put('/increaseNumOfViews', function (req, res) {
     res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept, Authorization");
 
-    let pointName = req.body.pointName;
+    let pointName = req.query.pointName;
     DButilsAzure.execQuery(
         "DECLARE @NUM AS INT SET @NUM = (SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "') UPDATE T SET T.[NUMOFVIEWS] = (@NUM+1) FROM POINTS T WHERE T.[NAME] = '" + pointName + "' SELECT NUMOFVIEWS FROM [POINTS] P WHERE P.[NAME] = '" + pointName + "'")
         .then(function (result) {
